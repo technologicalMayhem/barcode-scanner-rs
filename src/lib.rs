@@ -118,20 +118,26 @@ impl BarcodeScanner {
 			let events = self.device.fetch_events()
 				.map_err(|e| Error::new(format!("Failed to fetch events from input device: {e}")))?;
 
-			let mut shift_pressed = false;
+			// Track the state of the shift keys and capslock
+			let mut left_shift_pressed = false;
+			let mut right_shift_pressed = false;
+			let mut capslock_on = false;
 			for event in events {
 				// Check if key is pressed (value 1 for the key pressed, velue 0 for the key released).
 				if event.event_type() == evdev::EventType::KEY {
 					// Create Key object based on the code.
 					let key_name = evdev::Key(event.code());
 
-					if key_name == evdev::Key::KEY_LEFTSHIFT {
-                        shift_pressed = if event.value() == 1 { true } else { false }
-                    }
+					match key_name {
+						evdev::Key::KEY_LEFTSHIFT => left_shift_pressed = event.value() == 1,
+						evdev::Key::KEY_RIGHTSHIFT => right_shift_pressed = event.value() == 1,
+						evdev::Key::KEY_CAPSLOCK => capslock_on = event.value() == 1,
+						_ => {},
+					}					
 
                     // Map key_name to the number or char.
                     if event.value() == 1 {
-                        if let Some(c) = key_to_str(key_name, shift_pressed) {
+                        if let Some(c) = key_to_str(key_name, left_shift_pressed || right_shift_pressed || capslock_on) {
                             self.buffer.push(c);
                         }
                     }
@@ -162,7 +168,7 @@ impl BarcodeScanner {
 }
 
 /// Map a scanned key to a character
-fn key_to_str(key: evdev::Key, shift_pressed: bool) -> Option<char> {
+fn key_to_str(key: evdev::Key, capital: bool) -> Option<char> {
     let char = match key {
         // Digits
         evdev::Key::KEY_1 => ['1', '!'],
@@ -221,7 +227,7 @@ fn key_to_str(key: evdev::Key, shift_pressed: bool) -> Option<char> {
         _ => return None
     };
 
-    if shift_pressed {
+    if capital {
         Some(char[1])
     } else {
         Some(char[0])
