@@ -204,6 +204,7 @@ fn key_to_str(key: evdev::Key, shift_pressed: bool) -> Option<char> {
         evdev::Key::KEY_Z => ['z','Z'],
         // Special
         evdev::Key::KEY_SPACE => [' ', ' '],
+        evdev::Key::KEY_TAB => ['\t', '\t'],
         evdev::Key::KEY_APOSTROPHE => ['\'', '"'],
         evdev::Key::KEY_EQUAL => ['=', '+'],
         evdev::Key::KEY_COMMA => [',', '<'],
