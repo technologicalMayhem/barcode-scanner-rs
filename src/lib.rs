@@ -121,7 +121,7 @@ impl BarcodeScanner {
 			let mut shift_pressed = false;
 			for event in events {
 				// Check if key is pressed (value 1 for the key pressed, velue 0 for the key released).
-				if event.event_type() == evdev::EventType::KEY && event.value() == 1 {
+				if event.event_type() == evdev::EventType::KEY {
 					// Create Key object based on the code.
 					let key_name = evdev::Key(event.code());
 
