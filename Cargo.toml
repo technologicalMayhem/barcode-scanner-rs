@@ -1,6 +1,6 @@
 [package]
 name = "barcode-scanner"
-version = "0.1.0"
+version = "0.1.1"
 description = "Linux interface to barcode USB hand scanners"
 license = "BSD-2-Clause OR Apache-2.0"
 repository = "https://github.com/robohouse-delft/barcode-scanner-rs"
