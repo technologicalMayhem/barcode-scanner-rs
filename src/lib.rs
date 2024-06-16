@@ -117,16 +117,24 @@ impl BarcodeScanner {
 		loop {
 			let events = self.device.fetch_events()
 				.map_err(|e| Error::new(format!("Failed to fetch events from input device: {e}")))?;
+
+			let mut shift_pressed = false;
 			for event in events {
 				// Check if key is pressed (value 1 for the key pressed, velue 0 for the key released).
 				if event.event_type() == evdev::EventType::KEY && event.value() == 1 {
 					// Create Key object based on the code.
 					let key_name = evdev::Key(event.code());
 
-					// Map key_name to the number or char.
-					if let Some(c) = key_to_str(key_name) {
-						self.buffer.push(c);
-					}
+					if key_name == evdev::Key::KEY_LEFTSHIFT {
+                        shift_pressed = if event.value() == 1 { true } else { false }
+                    }
+
+                    // Map key_name to the number or char.
+                    if event.value() == 1 {
+                        if let Some(c) = key_to_str(key_name, shift_pressed) {
+                            self.buffer.push(c);
+                        }
+                    }
 				}
 			}
 
@@ -154,48 +162,69 @@ impl BarcodeScanner {
 }
 
 /// Map a scanned key to a character
-fn key_to_str(key: evdev::Key) -> Option<char> {
-	match key {
-		evdev::Key::KEY_A => Some('A'),
-		evdev::Key::KEY_B => Some('B'),
-		evdev::Key::KEY_C => Some('C'),
-		evdev::Key::KEY_D => Some('D'),
-		evdev::Key::KEY_E => Some('E'),
-		evdev::Key::KEY_F => Some('F'),
-		evdev::Key::KEY_G => Some('G'),
-		evdev::Key::KEY_H => Some('H'),
-		evdev::Key::KEY_I => Some('I'),
-		evdev::Key::KEY_J => Some('J'),
-		evdev::Key::KEY_K => Some('K'),
-		evdev::Key::KEY_L => Some('L'),
-		evdev::Key::KEY_M => Some('M'),
-		evdev::Key::KEY_N => Some('N'),
-		evdev::Key::KEY_O => Some('O'),
-		evdev::Key::KEY_P => Some('P'),
-		evdev::Key::KEY_Q => Some('Q'),
-		evdev::Key::KEY_R => Some('R'),
-		evdev::Key::KEY_S => Some('S'),
-		evdev::Key::KEY_T => Some('T'),
-		evdev::Key::KEY_U => Some('U'),
-		evdev::Key::KEY_V => Some('V'),
-		evdev::Key::KEY_W => Some('W'),
-		evdev::Key::KEY_X => Some('X'),
-		evdev::Key::KEY_Y => Some('Y'),
-		evdev::Key::KEY_Z => Some('Z'),
-		evdev::Key::KEY_0 => Some('0'),
-		evdev::Key::KEY_1 => Some('1'),
-		evdev::Key::KEY_2 => Some('2'),
-		evdev::Key::KEY_3 => Some('3'),
-		evdev::Key::KEY_4 => Some('4'),
-		evdev::Key::KEY_5 => Some('5'),
-		evdev::Key::KEY_6 => Some('6'),
-		evdev::Key::KEY_7 => Some('7'),
-		evdev::Key::KEY_8 => Some('8'),
-		evdev::Key::KEY_9 => Some('9'),
-		evdev::Key::KEY_ENTER => Some('\n'),
-		evdev::Key::KEY_KPENTER => Some('\n'),
-		_ => None,
-	}
+fn key_to_str(key: evdev::Key, shift_pressed: bool) -> Option<char> {
+    let char = match key {
+        // Digits
+        evdev::Key::KEY_1 => ['1', '!'],
+        evdev::Key::KEY_2 => ['2', '@'],
+        evdev::Key::KEY_3 => ['3', '#'],
+        evdev::Key::KEY_4 => ['4', '$'],
+        evdev::Key::KEY_5 => ['5', '%'],
+        evdev::Key::KEY_6 => ['6', '^'],
+        evdev::Key::KEY_7 => ['7', '&'],
+        evdev::Key::KEY_8 => ['8', '*'],
+        evdev::Key::KEY_9 => ['9', '('],
+        evdev::Key::KEY_0 => ['0', ')'],
+        // Letters
+        evdev::Key::KEY_A => ['a','A'],
+        evdev::Key::KEY_B => ['b','B'],
+        evdev::Key::KEY_C => ['c','C'],
+        evdev::Key::KEY_D => ['d','D'],
+        evdev::Key::KEY_E => ['e','E'],
+        evdev::Key::KEY_F => ['f','F'],
+        evdev::Key::KEY_G => ['g','G'],
+        evdev::Key::KEY_H => ['h','H'],
+        evdev::Key::KEY_I => ['i','I'],
+        evdev::Key::KEY_J => ['j','J'],
+        evdev::Key::KEY_K => ['k','K'],
+        evdev::Key::KEY_L => ['l','L'],
+        evdev::Key::KEY_M => ['m','M'],
+        evdev::Key::KEY_N => ['n','N'],
+        evdev::Key::KEY_O => ['o','O'],
+        evdev::Key::KEY_P => ['p','P'],
+        evdev::Key::KEY_Q => ['q','Q'],
+        evdev::Key::KEY_R => ['r','R'],
+        evdev::Key::KEY_S => ['s','S'],
+        evdev::Key::KEY_T => ['t','T'],
+        evdev::Key::KEY_U => ['u','U'],
+        evdev::Key::KEY_V => ['v','V'],
+        evdev::Key::KEY_W => ['w','W'],
+        evdev::Key::KEY_X => ['x','X'],
+        evdev::Key::KEY_Y => ['y','Y'],
+        evdev::Key::KEY_Z => ['z','Z'],
+        // Special
+        evdev::Key::KEY_SPACE => [' ', ' '],
+        evdev::Key::KEY_APOSTROPHE => ['\'', '"'],
+        evdev::Key::KEY_EQUAL => ['=', '+'],
+        evdev::Key::KEY_COMMA => [',', '<'],
+        evdev::Key::KEY_MINUS => ['-', '_'],
+        evdev::Key::KEY_DOT => ['.', '>'],
+        evdev::Key::KEY_SLASH => ['/', '?'],
+        evdev::Key::KEY_BACKSLASH => ['\\', '|'],
+        evdev::Key::KEY_SEMICOLON => [';', ':'],
+        evdev::Key::KEY_LEFTBRACE => ['[', '{'],
+        evdev::Key::KEY_RIGHTBRACE => [']', '}'],
+        evdev::Key::KEY_GRAVE => ['`', '~'],
+        evdev::Key::KEY_KPENTER => ['\n', '\n'],
+        evdev::Key::KEY_ENTER => ['\n', '\n'],
+        _ => return None
+    };
+
+    if shift_pressed {
+        Some(char[1])
+    } else {
+        Some(char[0])
+    }
 }
 
 impl Error {
